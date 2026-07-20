@@ -1,10 +1,11 @@
 from django.urls import path
 
-from accounts.views import AccountListView
+from accounts.views import AccountListAPIView, AccountListGenericView
 
 
 app_name = "accounts"
 
 urlpatterns = [
-    path("", AccountListView.as_view(), name="accounts"),
+    path("", AccountListAPIView.as_view(), name="account-list"),
+    path("generic/", AccountListGenericView.as_view(), name="account-list-generic"),
 ]
