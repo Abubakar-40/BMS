@@ -6,5 +6,5 @@ from accounts.views import AccountListView
 app_name = "accounts"
 
 urlpatterns = [
-    path("", AccountListView.as_view(), name="account-list"),
+    path("", AccountListView.as_view(), name="accounts"),
 ]

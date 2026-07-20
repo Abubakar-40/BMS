@@ -6,5 +6,5 @@ from banks.views import BankListView
 app_name = "banks"
 
 urlpatterns = [
-    path("", BankListView.as_view(), name="bank-list"),
+    path("", BankListView.as_view(), name="banks"),
 ]

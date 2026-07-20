@@ -8,4 +8,4 @@ from users.models import User
 class UserAdmin(BaseUserAdmin):
     list_display = ("username", "email", "phone", "is_staff", "is_active")
     list_filter = ("is_staff", "is_active")
-    search_fields = ("username", "email", "phone")
+    search_fields = ("username", "email")
