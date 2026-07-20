@@ -28,6 +28,6 @@ class BankListAPIView(APIView):
         return Response(serializer.data)
 
 
-class BankListGenericView(ListAPIView):
+class BankListGenericAPIView(ListAPIView):
     queryset = Bank.objects.all()
     serializer_class = BankSerializer

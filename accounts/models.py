@@ -17,5 +17,9 @@ class Account(BaseModel):
         verbose_name_plural = "Accounts"
         db_table = "accounts"
 
+    @property
+    def bank_name(self):
+        return self.branch.bank.name
+
     def __str__(self):
         return self.account_number

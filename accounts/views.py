@@ -27,7 +27,7 @@ class AccountListAPIView(APIView):
         return Response(serializer.data)
 
 
-class AccountListGenericView(ListAPIView):
+class AccountListGenericAPIView(ListAPIView):
     serializer_class = AccountSerializer
 
     def get_queryset(self):
