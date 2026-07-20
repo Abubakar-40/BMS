@@ -31,6 +31,4 @@ class Branch(BaseModel):
         db_table = "branches"
 
     def __str__(self):
-        branch_label = f"{self.name} ({self.bank.name})"
-
-        return branch_label
+        return f"{self.name} ({self.bank.name})"
