@@ -34,3 +34,13 @@ Then visit `http://127.0.0.1:8000/admin/` to add sample banks, branches, and acc
 - `GET /accounts/` — only the logged-in user's own accounts (`Account.objects.filter(user=request.user)`), auth required.
 - All routes wired up through per-app `urls.py` files (namespaced with `app_name`), included into the root `bms/urls.py`.
 - Full flow smoke-tested end to end: unauthenticated request → `401`, login → session cookie issued, authenticated requests → real data scoped to the logged-in user, logout → session cleared, subsequent request → `401` again.
+
+## Phase 3 — DRF API Foundation
+
+- DRF installed and registered in `THIRD_PARTY_APPS`.
+- `BankSerializer` and `AccountSerializer` added (`ModelSerializer`); `AccountSerializer` nests `bank_name` via `source="branch.bank.name"`, reaching through `branch → bank` in one field.
+- Same two endpoints (banks list, accounts list) implemented twice, to compare DRF approaches:
+  - `BankListAPIView` / `AccountListAPIView` — plain `APIView`, manual `get()` handling.
+  - `BankListGenericView` / `AccountListGenericView` — DRF's `ListAPIView`, no `get()` written at all.
+- URL structure restructured: login/logout moved under `/auth/`, banks/accounts APIs moved under `/api/`. Phase 2's plain `BankListView`/`AccountListView` are currently unrouted (code still present, no URL points to them).
+- All 6 endpoints (`/auth/login/`, `/auth/logout/`, `/api/banks/`, `/api/banks/generic/`, `/api/accounts/`, `/api/accounts/generic/`) smoke-tested end to end.
