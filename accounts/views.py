@@ -1,5 +1,6 @@
 from rest_framework import status
-from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView, get_object_or_404
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -46,7 +47,7 @@ class AccountBalanceUpdateAPIView(UpdateAPIView):
 
 
 class AccountSummaryAPIView(APIView):
-    def get(self, request, account_id, *args, **kwargs):
+    def get(self, request, pk, *args, **kwargs):
         year = request.query_params.get("year")
         month = request.query_params.get("month")
 
@@ -55,8 +56,9 @@ class AccountSummaryAPIView(APIView):
                 {"detail": "month filter requires year to also be provided"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
-        account = get_object_or_404(Account.objects.filter(user=request.user), id=account_id)
+
+        account = get_object_or_404(Account.objects.filter(user=request.user), id=pk)
+
         summary = get_account_summary(
             account.id,
             year=int(year) if year else None,
