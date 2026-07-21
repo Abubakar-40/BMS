@@ -6,6 +6,7 @@ from accounts.models import Account, Transaction
 from banks.models import Bank, Branch
 from users.models import User
 
+
 deleted_banks = Bank.objects.all().delete()
 deleted_users = User.objects.filter(is_superuser=False).delete()
 
