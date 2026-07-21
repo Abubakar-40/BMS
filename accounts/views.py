@@ -1,34 +1,41 @@
-from django.http import JsonResponse
-from django.utils.decorators import method_decorator
-from django.views import View
-from rest_framework.generics import ListAPIView
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView
+from rest_framework.permissions import IsAuthenticated
 
+from accounts.filters import AccountFilter
 from accounts.models import Account
-from accounts.serializers import AccountSerializer
-from users.decorators import api_login_required
+from accounts.permissions import IsStaffForRetrieveDelete
+from accounts.serializers import AccountSerializer, AccountBalanceSerializer
 
 
-@method_decorator(api_login_required, name="dispatch")
-class AccountListView(View):
-    def get(self, request, *args, **kwargs):
-        accounts = Account.objects.filter(user=request.user).select_related("branch__bank")
-        data = list(accounts.values("branch__bank__name", "account_number", "balance"))
-
-        return JsonResponse(data, safe=False)
-
-
-class AccountListAPIView(APIView):
-    def get(self, request, *args, **kwargs):
-        accounts = Account.objects.filter(user=request.user).select_related("branch__bank")
-        serializer = AccountSerializer(accounts, many=True)
-
-        return Response(serializer.data)
-
-
-class AccountListGenericAPIView(ListAPIView):
+class AccountListAPIView(ListCreateAPIView):
     serializer_class = AccountSerializer
+    filterset_class = AccountFilter
+    search_fields = ("user__first_name", "user__last_name", "user__username")
+    ordering_fields = ("balance", "created", "user__username")
 
     def get_queryset(self):
         return Account.objects.filter(user=self.request.user).select_related("branch__bank")
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class AccountRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
+    serializer_class = AccountSerializer
+    permission_classes = (IsAuthenticated, IsStaffForRetrieveDelete)
+
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return Account.objects.all().select_related("branch__bank")
+
+        return Account.objects.filter(user=self.request.user).select_related("branch__bank")
+
+
+class AccountBalanceUpdateAPIView(UpdateAPIView):
+    serializer_class = AccountBalanceSerializer
+
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return Account.objects.all()
+
+        return Account.objects.filter(user=self.request.user)
