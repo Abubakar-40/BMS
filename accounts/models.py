@@ -1,6 +1,6 @@
 from django.db import models
 
-from accounts.choices import AccountType
+from accounts.choices import AccountType, TransactionType
 from bms.models import BaseModel
 
 
@@ -23,3 +23,18 @@ class Account(BaseModel):
 
     def __str__(self):
         return self.account_number
+
+
+class Transaction(BaseModel):
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    type = models.CharField(max_length=55, choices=TransactionType.choices, default=TransactionType.DEPOSIT)
+
+    account = models.ForeignKey("accounts.Account", on_delete=models.CASCADE, related_name="transactions")
+
+    class Meta:
+        verbose_name = "Transaction"
+        verbose_name_plural = "Transactions"
+        db_table = "transactions"
+
+    def __str__(self):
+        return f"{self.type} - {self.amount}"

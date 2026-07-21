@@ -46,6 +46,7 @@ THIRD_PARTY_APPS = (
     "rest_framework.authtoken",
     "django_filters",
     "constance",
+    "django_extensions",
 )
 
 CUSTOM_APPS = (
