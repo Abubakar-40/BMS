@@ -80,3 +80,14 @@ Then visit `http://127.0.0.1:8000/admin/` to add sample banks, branches, and acc
   - `/admin/` and `/api/auth/login/` — always exempt (`bms/constants.py`'s `EXEMPT_PATH_PREFIXES`), regardless of who's asking — otherwise nobody could ever reach the switch to turn maintenance mode back off, or get a token to prove they're staff.
   - Staff users — checked two ways, since the project is token-only for the API but Django admin is still session-based: session `request.user.is_staff` (already resolved by `AuthenticationMiddleware` for admin traffic) **or** a manual `Authorization` header → `Token` model lookup (since middleware runs before DRF's own token authentication ever gets a chance to resolve `request.user`).
 - Verified via `django.test.Client` against the running app state (not just unit assertions): maintenance off → normal `200`; maintenance on → regular user `503`, staff user `200` via token, `/api/auth/login/` and `/admin/login/` both still reachable during the outage.
+
+## Phase 9 — Transactions Model & Sample Data
+
+(Phase 8 — Caching & Logging — intentionally skipped for now.)
+
+- `Transaction(BaseModel)` added to `accounts/models.py`: `date`, `amount`, `type` (via a new `TransactionType` choices class — `DEPOSIT`/`WITHDRAWAL`, defaulting to `DEPOSIT`), `account` FK to `accounts.Account` (`related_name="transactions"`).
+- Registered in `accounts/admin.py` alongside `Account`.
+- `django-extensions` installed, enabling `manage.py shell_plus` (auto-imports every model — no manual import lines needed for a script that touches `User`, `Bank`, `Branch`, `Account`, and `Transaction` all at once).
+- `bms/scripts/generate_transactions.py` (new) — wipes existing non-superuser sample data, then generates a fresh dataset: 4 banks (each with one branch), 10 users (2 accounts each, in two *different* banks), and 30-50 transactions per account (random dates across 2024-2025, mixed deposits/withdrawals) — idempotent, safe to re-run. Uses `bulk_create` for the transactions (one query instead of 800+, and avoids `shell_plus`'s interactive-console echo spam on unassigned statement results).
+- Run via `python manage.py shell_plus < bms/scripts/generate_transactions.py`.
+- Verified: each user has exactly 2 accounts in different banks, transaction dates span the full 2024-01-01 to 2025-12-31 range, healthy deposit/withdrawal mix, per-account transaction counts fall within 30-50.
