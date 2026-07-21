@@ -1,26 +1,26 @@
-from django.contrib.auth import authenticate, login, logout
-from django.http import JsonResponse
-from django.views import View
-from django.views.decorators.csrf import csrf_exempt
-from django.utils.decorators import method_decorator
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 
-@method_decorator(csrf_exempt, name="dispatch")
-class LoginView(View):
+class LoginView(APIView):
+    permission_classes = (AllowAny,)
+
     def post(self, request, *args, **kwargs):
-        username = request.POST.get("username")
-        password = request.POST.get("password")
+        username = request.data.get("username")
+        password = request.data.get("password")
         user = authenticate(request, username=username, password=password)
         if user is None:
-            return JsonResponse({"detail": "Invalid credentials"}, status=401)
-        login(request, user)
+            return Response({"detail": "Invalid credentials"}, status=401)
+        token, _ = Token.objects.get_or_create(user=user)
 
-        return JsonResponse({"detail": "Login successful", "username": user.username})
+        return Response({"token": token.key})
 
 
-@method_decorator(csrf_exempt, name="dispatch")
-class LogoutView(View):
+class LogoutView(APIView):
     def post(self, request, *args, **kwargs):
-        logout(request)
+        Token.objects.filter(user=request.user).delete()
 
-        return JsonResponse({"detail": "Logout successful"})
+        return Response({"detail": "Logout successful"})
