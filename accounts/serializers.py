@@ -13,4 +13,3 @@ class AccountBalanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = ("id", "balance")
-        read_only_fields = ("id",)

@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 
+from bms.constances import CONSTANCE_CONFIG
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -73,10 +75,6 @@ REST_FRAMEWORK = {
 }
 
 CONSTANCE_BACKEND = "constance.backends.memory.MemoryBackend"
-
-CONSTANCE_CONFIG = {
-    "MAINTENANCE_MODE": (False, "Whether the site is in maintenance mode", bool),
-}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

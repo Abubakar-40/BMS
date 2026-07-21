@@ -1,8 +1,7 @@
 from constance import config
 from django.http import HttpResponse
+from rest_framework import status
 from rest_framework.authtoken.models import Token
-
-from bms.constants import EXEMPT_PATH_PREFIXES
 
 
 class MaintenanceModeMiddleware:
@@ -10,29 +9,16 @@ class MaintenanceModeMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if config.MAINTENANCE_MODE and not self.is_exempt(request):
-            return HttpResponse(
-                "The system is currently under maintenance. Please try again later.",
-                status=503,
-            )
+        if not config.MAINTENANCE_MODE or request.path.startswith(("/admin/", "/api/auth/login/")):
+            return self.get_response(request)
 
-        return self.get_response(request)
+        token_key = request.headers.get("Authorization", "").replace("Token ", "")
+        is_staff = request.user.is_staff or Token.objects.filter(key=token_key, user__is_staff=True).exists()
 
-    def is_exempt(self, request):
-        if request.path.startswith(EXEMPT_PATH_PREFIXES):
-            return True
+        if is_staff:
+            return self.get_response(request)
 
-        return self.is_staff(request)
-
-    def is_staff(self, request):
-        if request.user.is_authenticated and request.user.is_staff:
-            return True
-
-        auth_header = request.headers.get("Authorization", "")
-        if not auth_header.startswith("Token "):
-            return False
-
-        token_key = auth_header.split("Token ")[1]
-        token = Token.objects.filter(key=token_key).select_related("user").first()
-
-        return bool(token and token.user.is_staff)
+        return HttpResponse(
+            "The system is currently under maintenance. Please try again later.",
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )

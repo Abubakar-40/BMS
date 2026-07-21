@@ -20,7 +20,7 @@ class AccountListAPIView(ListCreateAPIView):
         serializer.save(user=self.request.user)
 
 
-class AccountDetailAPIView(RetrieveUpdateDestroyAPIView):
+class AccountRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
     serializer_class = AccountSerializer
     permission_classes = (IsAuthenticated, IsStaffForRetrieveDelete)
 
@@ -31,7 +31,7 @@ class AccountDetailAPIView(RetrieveUpdateDestroyAPIView):
         return Account.objects.filter(user=self.request.user).select_related("branch__bank")
 
 
-class AccountBalanceAPIView(UpdateAPIView):
+class AccountBalanceUpdateAPIView(UpdateAPIView):
     serializer_class = AccountBalanceSerializer
 
     def get_queryset(self):

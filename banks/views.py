@@ -9,6 +9,6 @@ class BankListAPIView(ListCreateAPIView):
     serializer_class = BankSerializer
 
 
-class BankDetailAPIView(RetrieveUpdateDestroyAPIView):
+class BankRetrieveUpdateDestroyAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Bank.objects.all()
     serializer_class = BankSerializer
