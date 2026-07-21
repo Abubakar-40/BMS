@@ -12,6 +12,6 @@ class AccountAdmin(admin.ModelAdmin):
 
 @admin.register(Transaction)
 class TransactionAdmin(admin.ModelAdmin):
-    list_display = ("account", "type", "amount", "date")
-    list_filter = ("type", "date")
+    list_display = ("account", "type", "amount", "created")
+    list_filter = ("type", "created")
     search_fields = ("account__account_number",)

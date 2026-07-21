@@ -26,7 +26,6 @@ class Account(BaseModel):
 
 
 class Transaction(BaseModel):
-    date = models.DateField()
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     type = models.CharField(max_length=55, choices=TransactionType.choices, default=TransactionType.DEPOSIT)
 
