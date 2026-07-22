@@ -1,10 +1,15 @@
+from rest_framework import status
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView, UpdateAPIView
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from accounts.filters import AccountFilter
 from accounts.models import Account
 from accounts.permissions import IsStaffForRetrieveDelete
-from accounts.serializers import AccountSerializer, AccountBalanceSerializer
+from accounts.reports import get_account_summary
+from accounts.serializers import AccountSerializer, AccountBalanceSerializer, AccountSummarySerializer
 
 
 class AccountListAPIView(ListCreateAPIView):
@@ -39,3 +44,26 @@ class AccountBalanceUpdateAPIView(UpdateAPIView):
             return Account.objects.all()
 
         return Account.objects.filter(user=self.request.user)
+
+
+class AccountSummaryAPIView(APIView):
+    def get(self, request, pk, *args, **kwargs):
+        year = request.query_params.get("year")
+        month = request.query_params.get("month")
+
+        if month and not year:
+            return Response(
+                {"detail": "month filter requires year to also be provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        account = get_object_or_404(Account.objects.filter(user=request.user), id=pk)
+
+        summary = get_account_summary(
+            account.id,
+            year=int(year) if year else None,
+            month=int(month) if month else None,
+        )
+        serializer = AccountSummarySerializer(summary)
+
+        return Response(serializer.data, status=status.HTTP_200_OK)

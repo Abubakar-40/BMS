@@ -13,3 +13,11 @@ class AccountBalanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Account
         fields = ("id", "balance")
+
+
+class AccountSummarySerializer(serializers.Serializer):
+    opening_balance = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total_deposits = serializers.DecimalField(max_digits=12, decimal_places=2)
+    total_withdrawals = serializers.DecimalField(max_digits=12, decimal_places=2)
+    max_txn_amount = serializers.DecimalField(max_digits=12, decimal_places=2)
+    min_running_balance = serializers.DecimalField(max_digits=12, decimal_places=2)

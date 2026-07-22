@@ -85,9 +85,18 @@ Then visit `http://127.0.0.1:8000/admin/` to add sample banks, branches, and acc
 
 (Phase 8 — Caching & Logging — intentionally skipped for now.)
 
-- `Transaction(BaseModel)` added to `accounts/models.py`: `date`, `amount`, `type` (via a new `TransactionType` choices class — `DEPOSIT`/`WITHDRAWAL`, defaulting to `DEPOSIT`), `account` FK to `accounts.Account` (`related_name="transactions"`).
+- `Transaction(BaseModel)` added to `accounts/models.py`: `amount`, `type` (via a new `TransactionType` choices class — `DEPOSIT`/`WITHDRAWAL`, defaulting to `DEPOSIT`), `account` FK to `accounts.Account` (`related_name="transactions"`). No separate `date` field — per review feedback, `BaseModel.created` was changed from `auto_now_add=True` to `default=timezone.now` (respects an explicit value if given, otherwise defaults to now) and reused directly to hold each transaction's actual date, avoiding a duplicate field.
 - Registered in `accounts/admin.py` alongside `Account`.
 - `django-extensions` installed, enabling `manage.py shell_plus` (auto-imports every model — no manual import lines needed for a script that touches `User`, `Bank`, `Branch`, `Account`, and `Transaction` all at once).
-- `bms/scripts/generate_transactions.py` (new) — wipes existing non-superuser sample data, then generates a fresh dataset: 4 banks (each with one branch), 10 users (2 accounts each, in two *different* banks), and 30-50 transactions per account (random dates across 2024-2025, mixed deposits/withdrawals) — idempotent, safe to re-run. Uses `bulk_create` for the transactions (one query instead of 800+, and avoids `shell_plus`'s interactive-console echo spam on unassigned statement results).
-- Run via `python manage.py shell_plus < bms/scripts/generate_transactions.py`.
+- `bms/scripts/generate_transactions.py` (new) — wipes existing non-superuser sample data, then generates a fresh dataset: 4 banks (each with one branch), 10 users (2 accounts each, in two *different* banks), and 30-50 transactions per account (random dates across 2024-2025, mixed deposits/withdrawals) — idempotent, safe to re-run. Uses `bulk_create` for the transactions (one query instead of 800+).
+- Run via `python manage.py shell_plus -c "$(cat bms/scripts/generate_transactions.py)"` — the `-c` form executes the file properly regardless of formatting, unlike piping it through stdin (`< file.py`), which breaks if a function body contains a blank line.
 - Verified: each user has exactly 2 accounts in different banks, transaction dates span the full 2024-01-01 to 2025-12-31 range, healthy deposit/withdrawal mix, per-account transaction counts fall within 30-50.
+
+## Phase 10 — Aggregates, Annotations & Window Functions
+
+- `GET /api/accounts/{account_id}/summary/?year=YYYY&month=MM` — financial snapshot for one account over a period; both filters optional, `month` without `year` returns `400`. Owner-only (not staff — a deliberate deviation from the rest of the `accounts` endpoints, decided for this specific report).
+- `accounts/reports.py` (new) — `get_account_summary(account_id, year, month)`, a plain function (no view/request coupling, directly testable in the shell) returning a flat dict: `opening_balance`, `total_deposits`, `total_withdrawals`, `max_txn_amount`, `min_running_balance`.
+- Uses `Case`/`When` to derive a signed amount per transaction (positive for deposits, negative for withdrawals), `aggregate()` for the period's totals/max, and `annotate()` with a windowed `Sum` (`Window(expression=Sum(...), order_by=["created", "id"])`) to compute the running balance after each transaction in chronological order — `min_running_balance` is the lowest point in that running series, not just the ending balance.
+- `opening_balance` is derived, not stored — sum of all transactions strictly before the selected period.
+- `AccountSummarySerializer` (new, plain `serializers.Serializer`, not tied to a model) — purely presentational, all computation happens in `reports.py`.
+- Verified consistency across periods: one period's ending balance correctly becomes the next period's `opening_balance`; empty periods correctly fall back `min_running_balance` to `opening_balance` instead of erroring; requests for another user's account return `404`.
