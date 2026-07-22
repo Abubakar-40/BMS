@@ -6,11 +6,14 @@ from django.db.models.functions import Coalesce
 from accounts.models import Transaction
 
 
+DECIMAL_FIELD = DecimalField(max_digits=12, decimal_places=2)
+
+
 def get_signed_amount():
     return Case(
         When(type="DEPOSIT", then=F("amount")),
         When(type="WITHDRAWAL", then=-F("amount")),
-        output_field=DecimalField(max_digits=12, decimal_places=2),
+        output_field=DECIMAL_FIELD,
     )
 
 
@@ -21,23 +24,23 @@ def calculate_opening_balance(account_id, year, month):
     prior_transactions = Transaction.objects.filter(account_id=account_id, created__lt=period_start)
 
     return prior_transactions.aggregate(
-        total=Coalesce(Sum(get_signed_amount()), Value(0), output_field=DecimalField(max_digits=12, decimal_places=2))
-    )["total"]
+        balance=Coalesce(Sum(get_signed_amount()), Value(0), output_field=DECIMAL_FIELD)
+    )["balance"]
 
 
 def calculate_totals(period_transactions):
     return period_transactions.aggregate(
         total_deposits=Coalesce(
-            Sum(Case(When(type="DEPOSIT", then=F("amount")), default=0, output_field=DecimalField(max_digits=12, decimal_places=2))),
+            Sum(Case(When(type="DEPOSIT", then=F("amount")), default=0, output_field=DECIMAL_FIELD)),
             Value(0),
-            output_field=DecimalField(max_digits=12, decimal_places=2),
+            output_field=DECIMAL_FIELD,
         ),
         total_withdrawals=Coalesce(
-            Sum(Case(When(type="WITHDRAWAL", then=F("amount")), default=0, output_field=DecimalField(max_digits=12, decimal_places=2))),
+            Sum(Case(When(type="WITHDRAWAL", then=F("amount")), default=0, output_field=DECIMAL_FIELD)),
             Value(0),
-            output_field=DecimalField(max_digits=12, decimal_places=2),
+            output_field=DECIMAL_FIELD,
         ),
-        max_txn_amount=Coalesce(Max("amount"), Value(0), output_field=DecimalField(max_digits=12, decimal_places=2)),
+        max_txn_amount=Coalesce(Max("amount"), Value(0), output_field=DECIMAL_FIELD),
     )
 
 
